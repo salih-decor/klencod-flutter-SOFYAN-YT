@@ -1,0 +1,11 @@
+@import "tailwindcss";
+body { font-family: "Segoe UI", Tahoma, "Noto Naskh Arabic", sans-serif; background: #0b1230; }
+@media print {
+  body { background: #fff; }
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; color: #000 !important; }
+  #print-area { position: absolute; inset: 0; background: #fff !important; }
+  .no-print { display: none !important; }
+  .keep { break-inside: avoid; }
+}
+@page { size: A4; margin: 15mm; }

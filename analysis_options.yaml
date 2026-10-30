@@ -1,3 +1,12 @@
+include: package:flutter_lints/flutter.yaml
+
 analyzer:
-  errors:
-    invalid_assignment: error
+  exclude:
+    - build/**
+    - backend/**
+    - legacy_web_frontend/**
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    avoid_print: true

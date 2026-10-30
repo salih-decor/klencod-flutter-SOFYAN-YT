@@ -1,0 +1,120 @@
+name: Build SOFYAN YT APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "عنوان خادم FastAPI الافتراضي داخل التطبيق (https://...)"
+        required: false
+        default: ""
+
+env:
+  FLUTTER_VERSION: "3.27.4"
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Locate Flutter project
+        id: locate
+        shell: bash
+        run: |
+          if [ -f pubspec.yaml ]; then
+            echo "dir=." >> "$GITHUB_OUTPUT"
+          else
+            d=$(find . -maxdepth 2 -name pubspec.yaml -not -path "*/node_modules/*" | head -n1 | xargs -r dirname)
+            if [ -z "$d" ]; then echo "Cannot find pubspec.yaml" >&2; exit 1; fi
+            echo "dir=$d" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: flutter pub get
+        working-directory: ${{ steps.locate.outputs.dir }}
+        run: flutter pub get
+
+      - name: flutter analyze
+        working-directory: ${{ steps.locate.outputs.dir }}
+        # --no-fatal-infos: ملاحظات "info" لا تُفشل البناء؛ الأخطاء والتحذيرات تُفشله.
+        run: flutter analyze --no-fatal-infos
+
+      - name: Prepare release signing (optional)
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: ${{ steps.locate.outputs.dir }}
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > android/app/release.keystore
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+
+      - name: flutter build apk --release
+        working-directory: ${{ steps.locate.outputs.dir }}
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url || vars.API_BASE_URL }}
+        run: |
+          if [ -n "$API_BASE_URL" ]; then
+            flutter build apk --release --dart-define=API_BASE_URL="$API_BASE_URL"
+          else
+            flutter build apk --release
+          fi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SOFYAN-YT-release-apk
+          path: ${{ steps.locate.outputs.dir }}/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  flutter-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locate Flutter project
+        id: locate
+        shell: bash
+        run: |
+          if [ -f pubspec.yaml ]; then echo "dir=." >> "$GITHUB_OUTPUT"; else
+            d=$(find . -maxdepth 2 -name pubspec.yaml | head -n1 | xargs -r dirname); echo "dir=$d" >> "$GITHUB_OUTPUT"; fi
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: flutter pub get
+        working-directory: ${{ steps.locate.outputs.dir }}
+        run: flutter pub get
+      - name: flutter test
+        working-directory: ${{ steps.locate.outputs.dir }}
+        run: flutter test

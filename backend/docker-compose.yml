@@ -1,0 +1,31 @@
+# تشغيل الخادم مع HTTPS تلقائي (شهادة Let's Encrypt عبر Caddy).
+# المتطلبات: خادم عليه Docker + نطاق (DOMAIN) يشير إلى IP الخادم + المنفذان 80 و443 مفتوحان.
+#   cp .env.example .env   (املأ المفاتيح وDOMAIN)   ثم:   docker compose up -d --build
+services:
+  api:
+    build: .
+    env_file: .env
+    volumes:
+      - sofyan_data:/data
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    depends_on: [api]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:?ضع DOMAIN في ملف .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  sofyan_data:
+  caddy_data:
+  caddy_config:

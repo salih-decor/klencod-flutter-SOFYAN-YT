@@ -1,0 +1,31 @@
+name: Check SOFYAN YT Backend
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Tesseract (for the OCR unit test)
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-ara tesseract-ocr-fra
+      - name: Install requirements
+        working-directory: backend
+        run: pip install -r requirements.txt
+      - name: Syntax check
+        working-directory: backend
+        run: python -m py_compile main.py db.py security.py rag.py prompts.py llm.py ocr.py
+      - name: Import app (validates FastAPI route definitions)
+        working-directory: backend
+        env:
+          SOFYAN_DATA_DIR: ${{ runner.temp }}/sofyan-data
+        run: python -c "import main; print('routes:', len(main.app.routes))"
+      - name: Unit tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -v

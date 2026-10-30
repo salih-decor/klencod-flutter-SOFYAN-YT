@@ -1,8 +1,26 @@
+# Flutter / Dart
 .dart_tool/
-.flutter-plugins*
+.flutter-plugins
+.flutter-plugins-dependencies
 .packages
+.pub-cache/
+.pub/
 build/
+pubspec.lock.bak
+# Android
+android/.gradle/
 android/local.properties
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+android/gradlew
+android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar
+*.iml
+.idea/
+# Backend
 backend/.env
-backend/*.db
-*.jks
+backend/data/
+backend/.venv/
+__pycache__/
+*.db
