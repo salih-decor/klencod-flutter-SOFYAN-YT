@@ -1,0 +1,8 @@
+.dart_tool/
+.flutter-plugins*
+.packages
+build/
+android/local.properties
+backend/.env
+backend/*.db
+*.jks

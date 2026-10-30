@@ -1,0 +1,16 @@
+name: sofyan_yt
+description: SOFYAN YT - المساعد الذكي للبكالوريا الجزائرية
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  image_picker: ^1.1.2
+  file_picker: ^8.1.7
+  pdf: ^3.11.1
+  printing: ^5.13.4
+flutter:
+  uses-material-design: true
